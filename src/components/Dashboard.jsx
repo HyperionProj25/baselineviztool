@@ -1,38 +1,152 @@
 import React, { useState, useMemo } from 'react';
-import { Users, User, Presentation, RotateCcw, TrendingUp, Activity, Target } from 'lucide-react';
+import { Users, User, Presentation, RotateCcw, TrendingUp, Activity, Target, ChevronDown, Check, X } from 'lucide-react';
 import BaselineLogo from './BaselineLogo';
 import MetricChart from './MetricChart';
 import { aggregateBySession } from '../utils/csvParser';
 
 const BLAST_METRICS = [
-  { key: 'Bat Speed mph', label: 'Bat Speed', unit: 'mph', category: 'power' },
-  { key: 'Power kW', label: 'Power', unit: 'kW', category: 'power' },
-  { key: 'Peak Hand Speed mph', label: 'Peak Hand Speed', unit: 'mph', category: 'power' },
-  { key: 'Attack Angle deg', label: 'Attack Angle', unit: 'deg', category: 'mechanics' },
-  { key: 'Plane Score', label: 'Plane Score', unit: '', category: 'mechanics' },
-  { key: 'Connection Score', label: 'Connection Score', unit: '', category: 'mechanics' },
-  { key: 'Rotation Score', label: 'Rotation Score', unit: '', category: 'mechanics' },
-  { key: 'On Plane Efficiency %', label: 'On Plane Efficiency', unit: '%', category: 'mechanics' },
-  { key: 'Time to Contact sec', label: 'Time to Contact', unit: 'sec', category: 'timing' },
-  { key: 'Rotational Acceleration g', label: 'Rotational Acceleration', unit: 'g', category: 'power' },
+  { key: 'Bat Speed mph', label: 'Bat Speed', unit: 'mph', category: 'Power' },
+  { key: 'Power kW', label: 'Power', unit: 'kW', category: 'Power' },
+  { key: 'Peak Hand Speed mph', label: 'Peak Hand Speed', unit: 'mph', category: 'Power' },
+  { key: 'Rotational Acceleration g', label: 'Rotational Acceleration', unit: 'g', category: 'Power' },
+  { key: 'Attack Angle deg', label: 'Attack Angle', unit: 'deg', category: 'Mechanics' },
+  { key: 'Plane Score', label: 'Plane Score', unit: '', category: 'Scores' },
+  { key: 'Connection Score', label: 'Connection Score', unit: '', category: 'Scores' },
+  { key: 'Rotation Score', label: 'Rotation Score', unit: '', category: 'Scores' },
+  { key: 'On Plane Efficiency %', label: 'On Plane Efficiency', unit: '%', category: 'Mechanics' },
+  { key: 'Early Connection deg', label: 'Early Connection', unit: 'deg', category: 'Connection' },
+  { key: 'Connection at Impact deg', label: 'Connection at Impact', unit: 'deg', category: 'Connection' },
+  { key: 'Vertical Bat Angle deg', label: 'Vertical Bat Angle', unit: 'deg', category: 'Mechanics' },
+  { key: 'Time to Contact sec', label: 'Time to Contact', unit: 'sec', category: 'Timing' },
+  { key: 'Exit Velocity mph', label: 'Exit Velocity (Blast)', unit: 'mph', category: 'Results' },
+  { key: 'Launch Angle deg', label: 'Launch Angle (Blast)', unit: 'deg', category: 'Results' },
+  { key: 'Estimated Distance feet', label: 'Estimated Distance', unit: 'ft', category: 'Results' },
 ];
 
 const HITTRAX_METRICS = [
-  { key: 'AvgV', label: 'Avg Exit Velocity', unit: 'mph', category: 'velocity' },
-  { key: 'MaxV', label: 'Max Exit Velocity', unit: 'mph', category: 'velocity' },
-  { key: 'Dist', label: 'Distance', unit: 'ft', category: 'results' },
-  { key: 'AVG', label: 'Batting Average', unit: '', category: 'results' },
-  { key: 'SLG', label: 'Slugging', unit: '', category: 'results' },
-  { key: 'LD %', label: 'Line Drive %', unit: '%', category: 'batted_ball' },
-  { key: 'FB %', label: 'Fly Ball %', unit: '%', category: 'batted_ball' },
-  { key: 'GB %', label: 'Ground Ball %', unit: '%', category: 'batted_ball' },
-  { key: 'Points', label: 'Points', unit: '', category: 'results' },
+  { key: 'AvgV', label: 'Avg Exit Velocity', unit: 'mph', category: 'Velocity' },
+  { key: 'MaxV', label: 'Max Exit Velocity', unit: 'mph', category: 'Velocity' },
+  { key: 'Dist', label: 'Distance', unit: 'ft', category: 'Results' },
+  { key: 'AVG', label: 'Batting Average', unit: '', category: 'Stats' },
+  { key: 'SLG', label: 'Slugging', unit: '', category: 'Stats' },
+  { key: 'AB', label: 'At Bats', unit: '', category: 'Counting' },
+  { key: 'H', label: 'Hits', unit: '', category: 'Counting' },
+  { key: 'EBH', label: 'Extra Base Hits', unit: '', category: 'Counting' },
+  { key: 'HR', label: 'Home Runs', unit: '', category: 'Counting' },
+  { key: 'HHA', label: 'Hard Hit Average', unit: '', category: 'Stats' },
+  { key: 'LPH', label: 'Line Drive Pull %', unit: '', category: 'Batted Ball' },
+  { key: 'Points', label: 'Points', unit: '', category: 'Results' },
+  { key: 'LD %', label: 'Line Drive %', unit: '%', category: 'Batted Ball' },
+  { key: 'FB %', label: 'Fly Ball %', unit: '%', category: 'Batted Ball' },
+  { key: 'GB %', label: 'Ground Ball %', unit: '%', category: 'Batted Ball' },
 ];
 
 const TABS = [
   { id: 'blast', label: 'Blast Motion', icon: Activity },
   { id: 'hittrax', label: 'HitTrax', icon: Target },
 ];
+
+// Get unique categories
+const getCategories = (metrics) => {
+  return [...new Set(metrics.map(m => m.category))];
+};
+
+const MetricSelector = ({ metrics, selectedMetrics, onToggle, onSelectAll, onClearAll }) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const categories = getCategories(metrics);
+
+  return (
+    <div className="relative">
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="flex items-center gap-2 px-4 py-2 bg-bg-card border border-border rounded-lg text-cream hover:border-primary/50 transition-colors"
+      >
+        <span>Metrics ({selectedMetrics.length}/{metrics.length})</span>
+        <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+
+      {isOpen && (
+        <>
+          <div
+            className="fixed inset-0 z-40"
+            onClick={() => setIsOpen(false)}
+          />
+          <div className="absolute top-full left-0 mt-2 w-80 max-h-96 overflow-y-auto bg-bg-card border border-border rounded-xl shadow-xl z-50 animate-fade-in">
+            <div className="sticky top-0 bg-bg-card border-b border-border p-3 flex gap-2">
+              <button
+                onClick={onSelectAll}
+                className="flex-1 px-3 py-1.5 text-sm bg-primary/20 text-primary hover:bg-primary/30 rounded-lg transition-colors"
+              >
+                Select All
+              </button>
+              <button
+                onClick={onClearAll}
+                className="flex-1 px-3 py-1.5 text-sm bg-bg-elevated text-light hover:text-cream rounded-lg transition-colors"
+              >
+                Clear All
+              </button>
+            </div>
+
+            <div className="p-3 space-y-4">
+              {categories.map(category => (
+                <div key={category}>
+                  <h4 className="text-xs font-semibold text-muted uppercase tracking-wide mb-2">
+                    {category}
+                  </h4>
+                  <div className="space-y-1">
+                    {metrics
+                      .filter(m => m.category === category)
+                      .map(metric => (
+                        <button
+                          key={metric.key}
+                          onClick={() => onToggle(metric.key)}
+                          className={`w-full flex items-center justify-between px-3 py-2 rounded-lg transition-colors ${
+                            selectedMetrics.includes(metric.key)
+                              ? 'bg-primary/20 text-cream'
+                              : 'bg-bg-elevated text-light hover:bg-border'
+                          }`}
+                        >
+                          <span className="text-sm">{metric.label}</span>
+                          {selectedMetrics.includes(metric.key) && (
+                            <Check className="w-4 h-4 text-primary" />
+                          )}
+                        </button>
+                      ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </>
+      )}
+    </div>
+  );
+};
+
+const SelectedMetricTags = ({ metrics, selectedMetrics, onRemove }) => {
+  const selected = metrics.filter(m => selectedMetrics.includes(m.key));
+
+  if (selected.length === 0) return null;
+
+  return (
+    <div className="flex flex-wrap gap-2">
+      {selected.map(metric => (
+        <span
+          key={metric.key}
+          className="inline-flex items-center gap-1 px-2 py-1 bg-primary/20 text-primary-soft text-sm rounded-lg"
+        >
+          {metric.label}
+          <button
+            onClick={() => onRemove(metric.key)}
+            className="hover:text-cream transition-colors"
+          >
+            <X className="w-3 h-3" />
+          </button>
+        </span>
+      ))}
+    </div>
+  );
+};
 
 const Dashboard = ({ data, onReset, onPresentationMode }) => {
   const [activeTab, setActiveTab] = useState('blast');
@@ -41,6 +155,14 @@ const Dashboard = ({ data, onReset, onPresentationMode }) => {
   const [selectedForComparison, setSelectedForComparison] = useState([]);
   const [showTrendLines, setShowTrendLines] = useState(true);
   const [viewBySession, setViewBySession] = useState(true);
+
+  // Selected metrics for each tab
+  const [selectedBlastMetrics, setSelectedBlastMetrics] = useState(
+    BLAST_METRICS.slice(0, 6).map(m => m.key) // Default to first 6
+  );
+  const [selectedHittraxMetrics, setSelectedHittraxMetrics] = useState(
+    HITTRAX_METRICS.slice(0, 6).map(m => m.key) // Default to first 6
+  );
 
   // Get all players
   const allPlayers = useMemo(() => {
@@ -106,7 +228,28 @@ const Dashboard = ({ data, onReset, onPresentationMode }) => {
     }
   };
 
-  const metrics = activeTab === 'blast' ? BLAST_METRICS : HITTRAX_METRICS;
+  // Current metrics and selection handlers
+  const currentMetrics = activeTab === 'blast' ? BLAST_METRICS : HITTRAX_METRICS;
+  const selectedMetrics = activeTab === 'blast' ? selectedBlastMetrics : selectedHittraxMetrics;
+  const setSelectedMetrics = activeTab === 'blast' ? setSelectedBlastMetrics : setSelectedHittraxMetrics;
+
+  const toggleMetric = (key) => {
+    if (selectedMetrics.includes(key)) {
+      setSelectedMetrics(prev => prev.filter(k => k !== key));
+    } else {
+      setSelectedMetrics(prev => [...prev, key]);
+    }
+  };
+
+  const selectAllMetrics = () => {
+    setSelectedMetrics(currentMetrics.map(m => m.key));
+  };
+
+  const clearAllMetrics = () => {
+    setSelectedMetrics([]);
+  };
+
+  const displayedMetrics = currentMetrics.filter(m => selectedMetrics.includes(m.key));
 
   const hasDataForTab = (tab) => {
     if (comparisonMode) {
@@ -172,7 +315,7 @@ const Dashboard = ({ data, onReset, onPresentationMode }) => {
                 {comparisonMode ? 'Select Players (max 3)' : 'Select Player'}
               </h3>
 
-              <div className="space-y-2">
+              <div className="space-y-2 max-h-64 overflow-y-auto">
                 {allPlayers.map((player) => (
                   <button
                     key={player.playerName}
@@ -237,43 +380,72 @@ const Dashboard = ({ data, onReset, onPresentationMode }) => {
 
           {/* Main Content */}
           <div className="flex-1">
-            {/* Tabs */}
-            <div className="flex gap-2 mb-6">
-              {TABS.map((tab) => {
-                const Icon = tab.icon;
-                return (
-                  <button
-                    key={tab.id}
-                    onClick={() => setActiveTab(tab.id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
-                      activeTab === tab.id
-                        ? 'bg-primary text-white'
-                        : 'bg-bg-card text-light hover:text-cream'
-                    }`}
-                  >
-                    <Icon className="w-4 h-4" />
-                    {tab.label}
-                  </button>
-                );
-              })}
+            {/* Tabs and Metric Selector */}
+            <div className="flex flex-wrap items-center gap-4 mb-4">
+              <div className="flex gap-2">
+                {TABS.map((tab) => {
+                  const Icon = tab.icon;
+                  return (
+                    <button
+                      key={tab.id}
+                      onClick={() => setActiveTab(tab.id)}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg transition-colors ${
+                        activeTab === tab.id
+                          ? 'bg-primary text-white'
+                          : 'bg-bg-card text-light hover:text-cream'
+                      }`}
+                    >
+                      <Icon className="w-4 h-4" />
+                      {tab.label}
+                    </button>
+                  );
+                })}
+              </div>
+
+              <MetricSelector
+                metrics={currentMetrics}
+                selectedMetrics={selectedMetrics}
+                onToggle={toggleMetric}
+                onSelectAll={selectAllMetrics}
+                onClearAll={clearAllMetrics}
+              />
+            </div>
+
+            {/* Selected Metric Tags */}
+            <div className="mb-6">
+              <SelectedMetricTags
+                metrics={currentMetrics}
+                selectedMetrics={selectedMetrics}
+                onRemove={toggleMetric}
+              />
             </div>
 
             {/* Charts */}
             {hasDataForTab(activeTab) ? (
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {metrics.map((metric) => (
-                  <MetricChart
-                    key={metric.key}
-                    data={currentData}
-                    metric={metric.key}
-                    title={metric.label}
-                    unit={metric.unit}
-                    showTrendLine={showTrendLines && !comparisonMode}
-                    comparisonMode={comparisonMode}
-                    selectedPlayers={comparisonPlayers}
-                  />
-                ))}
-              </div>
+              displayedMetrics.length > 0 ? (
+                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                  {displayedMetrics.map((metric) => (
+                    <MetricChart
+                      key={metric.key}
+                      data={currentData}
+                      metric={metric.key}
+                      title={metric.label}
+                      unit={metric.unit}
+                      showTrendLine={showTrendLines && !comparisonMode}
+                      comparisonMode={comparisonMode}
+                      selectedPlayers={comparisonPlayers}
+                    />
+                  ))}
+                </div>
+              ) : (
+                <div className="bg-bg-card border border-border rounded-xl p-12 text-center">
+                  <TrendingUp className="w-12 h-12 text-muted mx-auto mb-4" />
+                  <h3 className="text-cream font-semibold mb-2">No Metrics Selected</h3>
+                  <p className="text-muted">
+                    Use the "Metrics" dropdown above to select which metrics to display
+                  </p>
+                </div>
+              )
             ) : (
               <div className="bg-bg-card border border-border rounded-xl p-12 text-center">
                 <TrendingUp className="w-12 h-12 text-muted mx-auto mb-4" />

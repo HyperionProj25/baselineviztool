@@ -5,21 +5,40 @@ import MetricChart from './MetricChart';
 import { aggregateBySession } from '../utils/csvParser';
 
 const BLAST_METRICS = [
-  { key: 'Bat Speed mph', label: 'Bat Speed', unit: 'mph' },
-  { key: 'Power kW', label: 'Power', unit: 'kW' },
-  { key: 'Peak Hand Speed mph', label: 'Peak Hand Speed', unit: 'mph' },
-  { key: 'Attack Angle deg', label: 'Attack Angle', unit: 'deg' },
-  { key: 'Plane Score', label: 'Plane Score', unit: '' },
-  { key: 'Connection Score', label: 'Connection Score', unit: '' },
-  { key: 'Rotation Score', label: 'Rotation Score', unit: '' },
+  { key: 'Bat Speed mph', label: 'Bat Speed', unit: 'mph', category: 'Power' },
+  { key: 'Power kW', label: 'Power', unit: 'kW', category: 'Power' },
+  { key: 'Peak Hand Speed mph', label: 'Peak Hand Speed', unit: 'mph', category: 'Power' },
+  { key: 'Rotational Acceleration g', label: 'Rotational Acceleration', unit: 'g', category: 'Power' },
+  { key: 'Attack Angle deg', label: 'Attack Angle', unit: 'deg', category: 'Mechanics' },
+  { key: 'Plane Score', label: 'Plane Score', unit: '', category: 'Scores' },
+  { key: 'Connection Score', label: 'Connection Score', unit: '', category: 'Scores' },
+  { key: 'Rotation Score', label: 'Rotation Score', unit: '', category: 'Scores' },
+  { key: 'On Plane Efficiency %', label: 'On Plane Efficiency', unit: '%', category: 'Mechanics' },
+  { key: 'Early Connection deg', label: 'Early Connection', unit: 'deg', category: 'Connection' },
+  { key: 'Connection at Impact deg', label: 'Connection at Impact', unit: 'deg', category: 'Connection' },
+  { key: 'Vertical Bat Angle deg', label: 'Vertical Bat Angle', unit: 'deg', category: 'Mechanics' },
+  { key: 'Time to Contact sec', label: 'Time to Contact', unit: 'sec', category: 'Timing' },
+  { key: 'Exit Velocity mph', label: 'Exit Velocity (Blast)', unit: 'mph', category: 'Results' },
+  { key: 'Launch Angle deg', label: 'Launch Angle (Blast)', unit: 'deg', category: 'Results' },
+  { key: 'Estimated Distance feet', label: 'Estimated Distance', unit: 'ft', category: 'Results' },
 ];
 
 const HITTRAX_METRICS = [
-  { key: 'AvgV', label: 'Avg Exit Velocity', unit: 'mph' },
-  { key: 'MaxV', label: 'Max Exit Velocity', unit: 'mph' },
-  { key: 'Dist', label: 'Distance', unit: 'ft' },
-  { key: 'AVG', label: 'Batting Average', unit: '' },
-  { key: 'SLG', label: 'Slugging', unit: '' },
+  { key: 'AvgV', label: 'Avg Exit Velocity', unit: 'mph', category: 'Velocity' },
+  { key: 'MaxV', label: 'Max Exit Velocity', unit: 'mph', category: 'Velocity' },
+  { key: 'Dist', label: 'Distance', unit: 'ft', category: 'Results' },
+  { key: 'AVG', label: 'Batting Average', unit: '', category: 'Stats' },
+  { key: 'SLG', label: 'Slugging', unit: '', category: 'Stats' },
+  { key: 'AB', label: 'At Bats', unit: '', category: 'Counting' },
+  { key: 'H', label: 'Hits', unit: '', category: 'Counting' },
+  { key: 'EBH', label: 'Extra Base Hits', unit: '', category: 'Counting' },
+  { key: 'HR', label: 'Home Runs', unit: '', category: 'Counting' },
+  { key: 'HHA', label: 'Hard Hit Average', unit: '', category: 'Stats' },
+  { key: 'LPH', label: 'Line Drive Pull %', unit: '', category: 'Batted Ball' },
+  { key: 'Points', label: 'Points', unit: '', category: 'Results' },
+  { key: 'LD %', label: 'Line Drive %', unit: '%', category: 'Batted Ball' },
+  { key: 'FB %', label: 'Fly Ball %', unit: '%', category: 'Batted Ball' },
+  { key: 'GB %', label: 'Ground Ball %', unit: '%', category: 'Batted Ball' },
 ];
 
 const PresentationMode = ({ data, onExit }) => {
