@@ -1,8 +1,22 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import { Users, User, Presentation, RotateCcw, TrendingUp, Activity, Target, ChevronDown, Check, X } from 'lucide-react';
 import BaselineLogo from './BaselineLogo';
 import MetricChart from './MetricChart';
 import { aggregateBySession } from '../utils/csvParser';
+
+const METRICS_STORAGE_KEY = 'baseline-metrics-preferences';
+
+const loadSavedMetrics = () => {
+  try {
+    const saved = localStorage.getItem(METRICS_STORAGE_KEY);
+    if (saved) {
+      return JSON.parse(saved);
+    }
+  } catch (e) {
+    // Ignore parse errors, use defaults
+  }
+  return null;
+};
 
 const BLAST_METRICS = [
   { key: 'Bat Speed mph', label: 'Bat Speed', unit: 'mph', category: 'Power' },
@@ -156,13 +170,23 @@ const Dashboard = ({ data, onReset, onPresentationMode }) => {
   const [showTrendLines, setShowTrendLines] = useState(true);
   const [viewBySession, setViewBySession] = useState(true);
 
-  // Selected metrics for each tab
-  const [selectedBlastMetrics, setSelectedBlastMetrics] = useState(
-    BLAST_METRICS.slice(0, 6).map(m => m.key) // Default to first 6
-  );
-  const [selectedHittraxMetrics, setSelectedHittraxMetrics] = useState(
-    HITTRAX_METRICS.slice(0, 6).map(m => m.key) // Default to first 6
-  );
+  // Selected metrics for each tab - load from localStorage if available
+  const [selectedBlastMetrics, setSelectedBlastMetrics] = useState(() => {
+    const saved = loadSavedMetrics();
+    return saved?.blast ?? BLAST_METRICS.slice(0, 6).map(m => m.key);
+  });
+  const [selectedHittraxMetrics, setSelectedHittraxMetrics] = useState(() => {
+    const saved = loadSavedMetrics();
+    return saved?.hittrax ?? HITTRAX_METRICS.slice(0, 6).map(m => m.key);
+  });
+
+  // Persist metrics selection to localStorage
+  useEffect(() => {
+    localStorage.setItem(METRICS_STORAGE_KEY, JSON.stringify({
+      blast: selectedBlastMetrics,
+      hittrax: selectedHittraxMetrics
+    }));
+  }, [selectedBlastMetrics, selectedHittraxMetrics]);
 
   // Get all players
   const allPlayers = useMemo(() => {
